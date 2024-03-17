@@ -1,3 +1,5 @@
+const dotenv = require('dotenv');
+const cookieParser = require("cookie-parser");
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -8,10 +10,12 @@ const fs = require('fs');
 const path = require('path');
 const { createUser, getUser } = require("./controllers/usercontroller");
 const { loginUser } = require("./controllers/logincontroller");
-const { createVideo, updateVideo, deleteVideo } = require("./controllers/videocontroller");
+const { createVideo,getVideos, updateVideo, deleteVideo } = require("./controllers/videocontroller");
 const { crearUsuarioRestringido, obtenerUsuariosRestringidos,editarUsuarioRestringido ,cargarDatosUsuariosRestringidos, eliminarUsuarioRestringido } = require('./controllers/usuariorestringidocontroller');
-const { requiereautenticar } = require("./middleware/sesion");
+const { requiereAutenticar } = require("./middleware/sesion");
 
+dotenv.config();
+app.use(cookieParser());
 app.use(cors());
 app.use(bodyParser.json());
 const PORT = 3000;
@@ -23,7 +27,7 @@ mongoose.connect("mongodb://localhost:27017/myapp").then(() => {
     process.exit(1);
 });
 
-
+app.use(express.static(path.join(__dirname, 'public')));
 // Configurar multer para manejar la carga de archivos
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -46,47 +50,42 @@ app.post('/upload-avatar', upload.single('file'), (req, res) => {
     }
 });
 
-app.get('/avatars/:nombreArchivo', (req, res) => {
-    // Obtener el nombre del archivo de la solicitud
+// Ruta GET para manejar las solicitudes de imágenes de avatares
+app.get('/imgavatares/:nombreArchivo', (req, res) => {
+    // Obtiene el nombre del archivo de la solicitud
     const nombreArchivo = req.params.nombreArchivo;
     
-    // Construir la ruta completa del archivo de avatar
-    const rutaAvatar = path.join(__dirname, '../imgavatares/', nombreArchivo);
+    // Construye la ruta completa del archivo de avatar incluyendo la extensión del archivo
+    const rutaAvatar = path.join(__dirname, 'public', 'imgavatares', `${nombreArchivo}.jpg`);
 
-    // Enviar el archivo de imagen como respuesta
-    res.sendFile(rutaAvatar);
+    // Verifica si el archivo existe antes de enviarlo
+    fs.access(rutaAvatar, fs.constants.F_OK, (err) => {
+        if (err) {
+            console.error('El archivo no existe:', rutaAvatar);
+            return res.status(404).send('Archivo no encontrado');
+        }
+
+        // Envia el archivo de imagen como respuesta
+        res.sendFile(rutaAvatar);
+    });
 });
 
 app.post("/register", createUser);
 app.get("/register", getUser);
 app.post("/login", loginUser);
 app.post("/videos", createVideo);
-//app.get("/videos", getVideos);
-app.put("/videos/:id", updateVideo);
-app.delete("/videos/:id", deleteVideo);
+app.get("/videos", requiereAutenticar, getVideos);
+//app.get("/videos",getVideos);
+//app.put("/videos/:id", updateVideo);
+//app.delete("/videos/:id", deleteVideo);
 app.post("/usuariosrestringido", crearUsuarioRestringido);
 app.get("/usuariosrestringido", obtenerUsuariosRestringidos);
 app.get("/usuariosrestringido/cargar", cargarDatosUsuariosRestringidos);
 app.put("/usuariosrestringido/:id", editarUsuarioRestringido); // Ruta para editar usuario restringido
 app.delete("/usuariosrestringido/:id", eliminarUsuarioRestringido); // Ruta para eliminar usuario restringido
 
+//app.get('/videos/lista', getVideos);
 
-app.get("/videos", requiereautenticar, async (req, res) => {
-    try {
-      //accede al userId adjunto en la solicitud req.userId
-      const userId = req.userId;
-  
-      // Realiza alguna operación basada en el userId, como buscar los videos asociados al usuario
-      const videos = await VideoModel.find({ userId });
-      console.log(videos);
-      // Devuelve los videos encontrados como respuesta
-      res.json(videos);
-    } catch (error) {
-      console.error('Error al obtener los videos:', error);
-      res.status(500).json({ error: 'Hubo un error al obtener los videos' });
-    }
-  });
-  
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

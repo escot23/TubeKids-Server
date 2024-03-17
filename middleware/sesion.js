@@ -1,26 +1,20 @@
 const jwt = require('jsonwebtoken');
+const jwtSecret = process.env.JWT_SECRET;
 
-const requiereautenticar = (req, res, next) => {
-  const token = req.cookies.jwt;
+const requiereAutenticar = (req, res, next) => {
+    const token = req.header('Authorization');
+    if (!token || !token.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Acceso no autorizado' });
+    }
 
-  // Verificar si el token existe
-  if (token) {
-    // Verificar el token JWT
-    jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
-      if (err) {
-        console.error(err.message);
-        res.status(401).json({ error: 'Token inválido' });
-      } else {
-        console.log('Token verificado:', decodedToken);
-        req.userId = decodedToken.userId; // Adjuntar el ID del usuario principal a la solicitud
-        next(); // Pasar al siguiente middleware
-      }
-    });
-  } else {
-    res.status(401).json({ error: 'Token no proporcionado' });
-  }
+    const tokenString = token.split(' ')[1]; // <-- Aquí ocurre el error
+    try {
+        const decoded = jwt.verify(tokenString, jwtSecret);
+        req.userId = decoded.userId; // Adjuntar el ID de usuario al objeto de solicitud
+        next(); // Continuar con la ejecución de la ruta
+    } catch (error) {
+        res.status(401).json({ error: 'Acceso no autorizado' });
+    }
 };
 
-
-
-module.exports = { requiereautenticar };
+module.exports = { requiereAutenticar };

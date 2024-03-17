@@ -2,12 +2,17 @@ const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const videoSchema = new Schema({
-    name: {
+    nombre: {
         type: String,
         required: true
     },
-    url: {
+    urlYoutube: {
         type: String,
+        required: true
+    },
+    userId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Usuario', // Ajusta el nombre del modelo de usuario según tu implementación
         required: true
     }
 });

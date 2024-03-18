@@ -9,11 +9,6 @@ const videoSchema = new Schema({
     urlYoutube: {
         type: String,
         required: true
-    },
-    userId: {
-        type: Schema.Types.ObjectId,
-        ref: 'Usuario', // Ajusta el nombre del modelo de usuario según tu implementación
-        required: true
     }
 });
 

@@ -1,4 +1,5 @@
-const UsuarioRestringidoModel = require('../models/usuariosrestringidosmodel.js');
+const UsuarioRestringidoModel = require('../models/usuarioRestringidoModel.js'); 
+
 const crearUsuarioRestringido = async (req, res) => {
     const { nombre, pin, avatar, edad } = req.body;
     if (!nombre || !pin || !avatar || !edad) {

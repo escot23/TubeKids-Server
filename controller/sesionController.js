@@ -1,28 +1,16 @@
-const Session = require("../models/sesionModel");
+const Sesion = require("../models/sesionModel");
 
-// Función para generar un token único
-const generarToken = () => {
-  // Generar un token único basado en la fecha actual
-  return Date.now().toString();
-};
-
-// Función para guardar la sesión en la base de datos
-const guardarSesion = async function (username) {
-  const token = generarToken();
-  const session = new Session({
+const guardarSesion = async (userId, token) => {
+  const session = new Sesion({
+    userId: userId,
     token: token,
-    usuario: username,
-    expira: new Date(), 
+    expire: new Date(Date.now() + 5 * 60 * 60 * 1000), // Expira en 5 horas
   });
-  return session.save();
+  await session.save();
 };
 
-// Función para obtener la sesión mediante el token
-const obtenerSesion = function (token) {
-  return Session.findOne({ token });
+const obtenerSesion = async (token) => {
+  return await Sesion.findOne({ token });
 };
 
-module.exports = {
-  guardarSesion,
-  obtenerSesion,
-};
+module.exports = { guardarSesion, obtenerSesion };

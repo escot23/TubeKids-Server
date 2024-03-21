@@ -21,7 +21,6 @@ const crearUsuario = async (req, res) => {
         birthdate
     });
     
-    // Verifica si el usuario tiene al menos 18 años
     const today = new Date();
     const dob = new Date(user.birthdate);
     let age = today.getFullYear() - dob.getFullYear();
@@ -31,11 +30,10 @@ const crearUsuario = async (req, res) => {
     if (age < 18) {
         return res.status(400).json({ error: "Debes tener al menos 18 años para registrarte" });
     }
-
     // Guarda el usuario en la base de datos
     try {
         const savedUser = await user.save();
-        res.status(201).json(savedUser);
+        res.status(201).json({ message: 'Usuario registrado correctamente', userId: savedUser._id });
     } catch (error) {
         console.error('Error al guardar el usuario:', error);
         res.status(500).json({ error: 'Hubo un error al intentar registrar el usuario' });

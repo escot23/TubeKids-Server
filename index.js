@@ -1,4 +1,6 @@
 const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
+
 const cookieParser = require('cookie-parser');
 const express = require('express');
 const app = express();
@@ -10,7 +12,8 @@ const fs = require('fs');
 const path = require('path');
 
 
-
+const User = require('./models/usuarioModel.js');
+const RestrictedUser = require('./models/usuarioRestringidoModel.js');
 const {
     crearUsuario,
     obtenerUsuario
@@ -18,7 +21,7 @@ const {
 
 const {
     loginUser
-} = require('./controller/loginController.js');
+} = require('./controller/loginController');
 
 const {
     crearVideo,
@@ -29,10 +32,11 @@ const {
 
 const {
     crearUsuarioRestringido,
-    obtenerUsuariosRestringidos,
     editarUsuarioRestringido,
     cargarDatosUsuariosRestringidos,
-    eliminarUsuarioRestringido
+    eliminarUsuarioRestringido,
+    getUsuarioRestringidos,
+    cargarUsuariosRestringidos,validarPin
 } = require('./controller/usuarioRestringidoController.js');
 
 //middlewares
@@ -57,11 +61,36 @@ mongoose
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Define el middleware authenticateToken
+const authenticateToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    console.log(token);
+
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
+        if (err) {
+            console.error('Error al verificar el token JWT:', err);
+            return res.status(403).json({ error: 'Forbidden' });
+        }
+
+        // Asigna el userId decodificado a req.user para su posterior uso en las rutas protegidas
+        req.user = { _id: decodedToken.userId };
+        next();
+    });
+};
+
+
 
 // Rutas para la administración de usuarios restringidos
 app.post('/usuariosrestringido', crearUsuarioRestringido);
-app.get('/usuariosrestringido', obtenerUsuariosRestringidos);
+app.get('/usuarioRestringido', authenticateToken, getUsuarioRestringidos);
 app.get('/usuariosrestringido/cargar', cargarDatosUsuariosRestringidos);
+app.get('/usuariosrestringido/mostrar', cargarUsuariosRestringidos);
+
 app.put('/usuariosrestringido/:id', editarUsuarioRestringido);
 app.delete('/usuariosrestringido/:id', eliminarUsuarioRestringido);
 
@@ -78,49 +107,45 @@ app.get('/videos', obtenerVideos);
 app.put('/videos/:id', editarVideo);
 app.delete('/videos/:id', eliminarVideo);
 
+// Ruta para validar el PIN
+app.post('/validarPin', authenticateToken, validarPin);
 
-// Configuración de Multer para manejar la carga de archivos en el html
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, 'public/imgavatares/'); // Directorio donde se guardarán las imágenes
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname)); // Nombre único para el archivo
-    }
-});
-const upload = multer({ storage: storage });
 
-// Ruta para manejar la carga de imágenes desde Dropzone.js
-app.post('/upload-avatar', upload.single('file'), (req, res) => {
-    if (req.file) {
-        // Aquí guarda la ruta de la imagen en base de datos o en mi carpeta
-        const imageUrl = req.file.path;
-        console.log(imageUrl);
-        res.status(200).json({ imageUrl: imageUrl });
-    } else {
-        res.status(400).json({ error: 'No se ha enviado ninguna imagen' });
-    }
-});
+// Ruta para autenticar usuarios y generar token JWT
+app.post("/api/session", async (req, res) => {
+    const { email, password } = req.body;
 
-// Ruta GET para manejar las solicitudes de imágenes de avatares
-app.get('/imgavatares/:nombreArchivo', (req, res) => {
-    // Obtiene el nombre del archivo de la solicitud
-    const nombreArchivo = req.params.nombreArchivo;
+    try {
+        // Buscar al usuario en la base de datos
+        const user = await User.findOne({ email, password });
 
-    // Construye la ruta completa del archivo de avatar
-    const rutaAvatar = path.join(__dirname, 'public', 'imgavatares', nombreArchivo);
+        if (user) {
+            // Verificar si existen usuarios restringidos asociados al usuario principal
+            const restrictedUsers = await RestrictedUser.find({ userId: user._id });
 
-    // Verifica si el archivo existe antes de enviarlo
-    fs.access(rutaAvatar, fs.constants.F_OK, (err) => {
-        if (err) {
-            console.error('El archivo no existe:', rutaAvatar);
-            return res.status(404).send('Archivo no encontrado');
+            // Determinar si hay usuarios restringidos relacionados con el ID del usuario principal
+            const hasRestrictedUsers = restrictedUsers && restrictedUsers.length > 0;
+
+            // Generar token JWT con la información del usuario
+            const token = jwt.sign({
+                userId: user._id,
+                email: user.email,
+                hasRestrictedUsers: hasRestrictedUsers // Pasar true si hay usuarios restringidos, false si no los hay
+            }, process.env.JWT_SECRET);
+            
+            console.log('Token JWT recibido:', token);
+
+            res.status(201).json({ token, hasRestrictedUsers });
+        } else {
+            res.status(401).json({ error: 'Invalid email or password' });
         }
-
-        // Envia el archivo de imagen como respuesta
-        res.sendFile(rutaAvatar);
-    });
+    } catch (error) {
+        console.error('Error while authenticating user:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
 });
+
+
 
 
 app.listen(PORT, () => {

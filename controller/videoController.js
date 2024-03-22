@@ -1,6 +1,6 @@
 const VideoModel = require('../models/videomodel.js');
 
-const crearVideo = async (req, res) => {
+const PostVideo = async (req, res) => {
     try {
         const { nombre, urlYoutube } = req.body;
         const userId = req.userId; // Obtener el ID de usuario del token JWT
@@ -22,7 +22,7 @@ const crearVideo = async (req, res) => {
     }
 };
 
-const obtenerVideos = async (req, res) => {
+const GetVideo = async (req, res) => {
     try {
         const userId = req.userId; // ID del usuario principal obtenido del token JWT
 
@@ -41,7 +41,7 @@ const obtenerVideos = async (req, res) => {
     }
 };
 
-const editarVideo = async (req, res) => {
+const PatchVideo = async (req, res) => {
     try {
         const { id } = req.params;
         const { nombre, urlYoutube } = req.body;
@@ -62,7 +62,7 @@ const editarVideo = async (req, res) => {
     }
 };
 
-const eliminarVideo = async (req, res) => {
+const PutVideo = async (req, res) => {
     try {
         const videoId = req.params.id;
 
@@ -79,8 +79,8 @@ const eliminarVideo = async (req, res) => {
 };
 
 module.exports = {
-    crearVideo,
-    obtenerVideos,
-    editarVideo,
-    eliminarVideo
+    PostVideo,
+    GetVideo,
+    PatchVideo,
+    PutVideo
 };

@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 
 const UserModel = require("../models/usuarioModel");
 
-const crearUsuario = async (req, res) => {
+const PostUsuario = async (req, res) => {
     // Valida los datos recibidos del cliente
     const { email, password, pin, name, lastName, country, birthdate } = req.body;
     if (!email || !password || !pin || !name || !lastName || !birthdate) {
@@ -40,7 +40,7 @@ const crearUsuario = async (req, res) => {
     }
 };
 
-const obtenerUsuario = (req, res) => {
+const GetUsuario = (req, res) => {
     UserModel.find()
         .then(data => {
             res.json(data);
@@ -52,35 +52,8 @@ const obtenerUsuario = (req, res) => {
 };
 
 
-
-
-const autenticarUsuario = async (req, res) => {
-    const { userId, pin } = req.body; // Suponiendo que tienes el ID del usuario y el PIN en la solicitud
-
-    try {
-        // Buscar al usuario en la base de datos usando el ID
-        const usuario = await UserModel.findById(userId);
-
-        // Verificar si se encontró al usuario
-        if (!usuario) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
-
-        // Verificar si el PIN coincide
-        if (pin === usuario.pin) {
-            return res.status(200).json({ message: 'Autenticación exitosa' });
-        } else {
-            return res.status(401).json({ error: 'PIN incorrecto' });
-        }
-    } catch (error) {
-        console.error('Error al autenticar el usuario:', error);
-        res.status(500).json({ error: 'Hubo un error al intentar autenticar al usuario' });
-    }
-};
-
-
 module.exports = {
-    crearUsuario,
-    obtenerUsuario,
+    PostUsuario,
+    GetUsuario,
     autenticarUsuario
 };

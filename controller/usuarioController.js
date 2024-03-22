@@ -54,6 +54,5 @@ const GetUsuario = (req, res) => {
 
 module.exports = {
     PostUsuario,
-    GetUsuario,
-    autenticarUsuario
+    GetUsuario
 };

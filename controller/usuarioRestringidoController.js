@@ -30,7 +30,7 @@ const GetDatos = async (req, res) => {
     try {
         // Obtén todos los usuarios restringidos desde la base de datos
         const usuarios = await UsuarioRestringidoModel.find();
-        
+        console.log("----users----", usuarios);
         // Mapea los datos de los usuarios incluyendo el ID
         const datosUsuarios = usuarios.map(usuario => {
             return {
@@ -47,6 +47,31 @@ const GetDatos = async (req, res) => {
         res.status(500).json({ error: 'Hubo un error al cargar los datos de usuarios restringidos' });
     }
 };
+const GetDato = async (req, res) => {
+    try {
+        const userId = req.userId; // Obtén el ID del usuario principal del token JWT
+        console.log(userId);
+        // Busca el usuario principal en la base de datos
+        const usuarioPrincipal = await UsuarioRestringidoModel.findOne({ _id: userId });
+        console.log(usuarioPrincipal);
+        if (!usuarioPrincipal) {
+            return res.status(404).json({ error: 'Usuario principal no encontrado' });
+        }
+
+        // Devuelve solo los datos del usuario principal
+        const datosUsuarioPrincipal = {
+            nombre: usuarioPrincipal.nombre,
+            avatar: usuarioPrincipal.avatar,
+            pin: usuarioPrincipal.pin
+        };
+
+        res.status(200).json(datosUsuarioPrincipal); // Envia los datos del usuario principal al cliente
+    } catch (error) {
+        console.error('Error al cargar los datos del usuario principal:', error);
+        res.status(500).json({ error: 'Hubo un error al cargar los datos del usuario principal' });
+    }
+};
+
 
 const GetPinUserPrincipal = (req, res) => {
     if (req.user && req.user._id && req.user.pin) { // Verificar si existe el usuario en el token y si tiene un ID y un pin
@@ -138,5 +163,5 @@ module.exports = {
     PatchUsuarioRestringido,
     PutUsuarioRestringido,
     GetListaUsuariosRestringidos,
-    GetDatos
+    GetDatos, GetDato
 };

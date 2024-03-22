@@ -14,7 +14,7 @@ const PostVideo = async (req, res) => {
         console.log(video);
         // Guardar el video en la base de datos
         const videoGuardado = await video.save();
-        console.log(videoGuardado);
+        console.log("55",videoGuardado);
         res.status(201).json(videoGuardado);
     } catch (error) {
         console.error('Error al crear el video:', error);
@@ -25,14 +25,14 @@ const PostVideo = async (req, res) => {
 const GetVideo = async (req, res) => {
     try {
         const userId = req.userId; // ID del usuario principal obtenido del token JWT
-
+        console.log("uuuu",userId);
         // Aquí realizas la lógica para obtener los videos asociados al usuario principal y sus usuarios restringidos
         const videos = await VideoModel.find({ userId });
-        console.log(videos);
+        console.log("videos",videos);
         if (!videos || videos.length === 0) {
             return res.status(404).json({ error: 'No se encontraron videos para este usuario' });
         } else {
-            console.log(videos);
+            console.log("..",videos);
             res.status(200).json(videos);
         }
     } catch (error) {

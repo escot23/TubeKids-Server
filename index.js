@@ -35,7 +35,7 @@ const {
     GetPinUserPrincipal,
     PutUsuarioRestringido,
     GetListaUsuariosRestringidos,
-    GetDatos
+    GetDatos,GetDato
 } = require('./controller/usuarioRestringidoController.js');
 
 // Middlewares
@@ -77,17 +77,17 @@ function authenticateToken(req, res, next) {
         // Asignar el userId y el pin a req.user para su posterior uso en las rutas protegidas
         req.user = { _id: userId, pin: pin };
         console.log("por aca intntamos cargar el id principal...", userId);
+        //65fd099c245cbb070ce0fdd2
 
-        console.log("PIN del principal tambien..", pin, userId);
         // Continuar con el middleware siguiente
         next();
     });
 }
 
 // Rutas para la administración de usuarios restringidos
-app.post('/usuariosrestringido', PostUsuarioRestringido);
+app.post('/usuariosrestringido', authenticateToken, PostUsuarioRestringido);
 app.get('/usuariosrestringido/cargar', authenticateToken, GetPinUserPrincipal);
-app.get('/usuariosrestringido/mostrar', GetListaUsuariosRestringidos);
+app.get('/usuariosrestringido/mostrar', authenticateToken, GetListaUsuariosRestringidos);
 app.put('/usuariosrestringido/:id', PatchUsuarioRestringido);
 app.delete('/usuariosrestringido/:id', PutUsuarioRestringido);
 app.get('/getdatos', GetDatos);
@@ -98,10 +98,10 @@ app.get('/register', GetUsuario);
 app.post('/login', loginUser);
 
 // Rutas de videos
-app.post('/videos', PostVideo);
-app.get('/videos', GetVideo);
-app.put('/videos/:id', PatchVideo);
-app.delete('/videos/:id', PutVideo);
+app.post('/videos',authenticateToken, PostVideo);
+app.get('/videos',authenticateToken, GetVideo);
+app.put('/videos/:id', authenticateToken, PatchVideo);
+app.delete('/videos/:id', authenticateToken,PutVideo);
 
 
 // Ruta para autenticar usuarios y generar token JWT
